@@ -70,6 +70,28 @@ class Attachment
         return $Attachment;
     }
 
+    public static function createFromUpload($uploadData, array $fields = [], $autoSave = false)
+    {
+        // sanity check
+        if (!is_uploaded_file($uploadData['tmp_name'])) {
+            throw new RuntimeException('Supplied file is not a valid upload');
+        }
+
+        $Attachment = static::create($fields);
+
+        if (!empty($uploadData['name']) && !$Attachment->Title) {
+            $Attachment->Title = preg_replace('/\.[^.]+$/', '', $uploadData['name']);
+        }
+
+        $Attachment->loadContent($uploadData['tmp_name']);
+
+        if ($autoSave) {
+            $Attachment->save();
+        }
+
+        return $Attachment;
+    }
+
     public static function createFromMedia(Media $Media, array $fields = [], $autoSave = false)
     {
         // manually create new instance so that CreatorID/Created can be set manually
