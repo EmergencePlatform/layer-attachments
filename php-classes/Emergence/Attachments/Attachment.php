@@ -17,6 +17,7 @@ class Attachment
     implements \Emergence\Interfaces\Image
 {
     public static $storageBucketId = 'attachments';
+    public static $fallbackIdenticon = 50;
 
     public static $collectionRoute = '/attachments';
     public static $tableName = 'attachments';
@@ -138,7 +139,7 @@ class Attachment
             $image = new Imagick($filePath);
 
             if (!$image->valid()) {
-                throw new UnexpectedValueException('media file reported as invalid by imagemagick');
+                throw new UnexpectedValueException('attachment content reported as invalid by imagemagick');
             }
 
             $mimeType = $image->getImageMimeType();
@@ -196,14 +197,28 @@ class Attachment
         }
 
 
-        // load from storage bucket
+        // try to load image from storage bucket
         $image = new Imagick();
-        $storageStream = $this->readStream();
-        $image->readImageFile($storageStream);
-        fclose($storageStream);
+        try {
+            $storageStream = $this->readStream();
+            $image->readImageFile($storageStream);
+            fclose($storageStream);
 
-        if (!$image->valid()) {
-            throw new UnexpectedValueException('image could not be read from attachment content');
+            if (!$image->valid()) {
+                throw new UnexpectedValueException('attachment content reported as invalid by imagemagick');
+            }
+        } catch (ImagickException $e) {
+            if (static::$fallbackIdenticon) {
+                // render an identicon instead
+                $identicon = new \Jdenticon\Identicon();
+                $identicon->setValue($this->ContentHash);
+                $identicon->setSize(static::$fallbackIdenticon);
+                $image->readImageBlob($identicon->getImageData('png'));
+            } else {
+                // create minimal PNG
+                $image->newImage(1, 1, new ImagickPixel());
+                $image->setImageFormat('png');
+            }
         }
 
 
