@@ -139,14 +139,8 @@ class Attachment
         $this->MIMEType = $mimeType;
     }
 
-    public function getImage(array $options = [])
+    public function readStream()
     {
-        if (!$this->ContentHash) {
-            return null;
-        }
-
-
-        // load from storage bucket
         $bucket = Storage::getFilesystem(static::$storageBucketId);
         $storagePath = "uploads/{$this->ContentHash}";
 
@@ -158,12 +152,24 @@ class Attachment
             throw new RuntimeException('failed to read attachment content from bucket: '.$storagePath);
         }
 
+        return $storageStream;
+    }
+
+    public function getImage(array $options = [])
+    {
+        if (!$this->ContentHash) {
+            return null;
+        }
+
+
+        // load from storage bucket
         $image = new Imagick();
+        $storageStream = $this->readStream();
         $image->readImageFile($storageStream);
         fclose($storageStream);
 
         if (!$image->valid()) {
-            throw new UnexpectedValueException('image could not be read from attachment content: '.$storagePath);
+            throw new UnexpectedValueException('image could not be read from attachment content');
         }
 
 
