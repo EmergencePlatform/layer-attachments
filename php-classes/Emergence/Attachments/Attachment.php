@@ -95,6 +95,12 @@ class Attachment
         return $Attachment;
     }
 
+    public function destroy()
+    {
+        $this->Status = 'removed';
+        $this->save();
+    }
+
     public function loadContent($filePath)
     {
         // only allow if no content loaded yet
