@@ -26,11 +26,41 @@ class RequestHandler extends \RecordsRequestHandler
     public static function handleRecordRequest(\ActiveRecord $Attachment, $action = false)
     {
         switch ($action ?: $action = static::shiftPath()) {
+            case 'content':
+                return static::handleContentRequest($Attachment);
             case 'image':
                 return static::handleImageRequest($Attachment);
             default:
                 return parent::handleRecordRequest($Attachment, $action);
         }
+    }
+
+    public static function handleContentRequest(Attachment $Attachment)
+    {
+        // check if configured
+        if (!$Attachment->ContentHash) {
+            return static::throwNotFoundError('attachment has no content yet');
+        }
+
+        // content should be immutable, so respond 304 right away if possible
+        if (
+            !empty($_SERVER['HTTP_IF_NONE_MATCH'])
+            && $_SERVER['HTTP_IF_NONE_MATCH'] == $Attachment->ContentHash
+        ) {
+            header('HTTP/1.0 304 Not Modified');
+            return;
+        }
+
+        $expires = 60*60*24*365;
+        header('Cache-Control: public, max-age='.$expires);
+        header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time()+$expires));
+        header('Pragma: public');
+        header('Content-Type: '.$Attachment->MIMEType);
+        header('ETag: '.$Attachment->ContentHash);
+
+        $storageStream = $Attachment->readStream();
+        fpassthru($storageStream);
+        fclose($storageStream);
     }
 
     public static function handleImageRequest(Attachment $Attachment)
