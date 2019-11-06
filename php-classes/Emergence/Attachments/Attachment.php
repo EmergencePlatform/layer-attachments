@@ -5,7 +5,9 @@ namespace Emergence\Attachments;
 use RuntimeException;
 use UnexpectedValueException;
 use Imagick;
+use ImagickException;
 
+use File;
 use Media;
 
 use Emergence\Site\Storage;
@@ -131,14 +133,18 @@ class Attachment
         }
 
 
-        // parse type with ImageMagick
-        $image = new Imagick($filePath);
+        // try to parse type with ImageMagick first
+        try {
+            $image = new Imagick($filePath);
 
-        if (!$image->valid()) {
-            throw new UnexpectedValueException('media file is not a handleable format');
+            if (!$image->valid()) {
+                throw new UnexpectedValueException('media file reported as invalid by imagemagick');
+            }
+
+            $mimeType = $image->getImageMimeType();
+        } catch (ImagickException $e) {
+            $mimeType = File::getMIMEType($filePath);
         }
-
-        $mimeType = $image->getImageMimeType();
 
 
         // calculate content hash via git method
