@@ -9,6 +9,7 @@ use ImagickException;
 
 use File;
 use Media;
+use HandleBehavior;
 
 use Dflydev\ApacheMimeTypes\PhpRepository as MimeTypesRepository;
 
@@ -143,6 +144,25 @@ class Attachment
         $extensions = $mimeTypesRepository->findExtensions($this->MIMEType);
 
         return count($extensions) ? $extensions[0] : null;
+    }
+
+    public function getSuggestedFilename()
+    {
+        $parts = [];
+
+        if ($this->Context) {
+            $parts[] = $this->Context->getTitle();
+        }
+
+        $parts[] = $this->getTitle();
+
+        $fileName = HandleBehavior::transformText(implode('__', $parts));
+
+        if ($fileExtension = $this->getFileExtension()) {
+            $fileName .= '.'.$fileExtension;
+        }
+
+        return $fileName;
     }
 
     public function loadContent($filePath)
