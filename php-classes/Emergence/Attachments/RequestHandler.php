@@ -42,6 +42,18 @@ class RequestHandler extends \RecordsRequestHandler
             return static::throwNotFoundError('attachment has no content yet');
         }
 
+        // check for download request
+        if ($downloadFilename = static::shiftPath()) {
+            if (
+                !preg_match('/\.[a-zA-Z0-9]+$/', $downloadFilename)
+                && ($extension = $Attachment->getFileExtension())
+            ) {
+                $downloadFilename .= '.'.$extension;
+            }
+
+            header('Content-Disposition: attachment; filename="'.str_replace('"', '', $downloadFilename).'"');
+        }
+
         // content should be immutable, so respond 304 right away if possible
         if (
             !empty($_SERVER['HTTP_IF_NONE_MATCH'])
