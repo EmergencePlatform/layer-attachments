@@ -10,6 +10,8 @@ use ImagickException;
 use File;
 use Media;
 
+use Dflydev\ApacheMimeTypes\PhpRepository as MimeTypesRepository;
+
 use Emergence\Site\Storage;
 
 class Attachment
@@ -124,6 +126,23 @@ class Attachment
     {
         $this->Status = 'removed';
         $this->save();
+    }
+
+    public function getFileExtension()
+    {
+        if (!$this->MIMEType) {
+            return null;
+        }
+
+        static $mimeTypesRepository = null;
+
+        if ($mimeTypesRepository === null) {
+            $mimeTypesRepository = new MimeTypesRepository;
+        }
+
+        $extensions = $mimeTypesRepository->findExtensions($this->MIMEType);
+
+        return count($extensions) ? $extensions[0] : null;
     }
 
     public function loadContent($filePath)
