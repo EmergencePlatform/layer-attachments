@@ -15,9 +15,9 @@ class RequestHandler extends \RecordsRequestHandler
     public static $imageCompressionQuality = 90;
 
     public static $recordClass = Attachment::class;
-    public static $accountLevelAPI = 'ReadOnlyStaff';
-    public static $accountLevelBrowse = 'ReadOnlyStaff';
-    public static $accountLevelRead = 'ReadOnlyStaff';
+    public static $accountLevelAPI = 'Staff';
+    public static $accountLevelBrowse = 'Staff';
+    public static $accountLevelRead = 'Staff';
     public static $accountLevelComment = 'Staff';
     public static $accountLevelWrite = 'Staff';
     public static $browseLimitDefault = 20;
